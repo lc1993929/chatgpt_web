@@ -1,24 +1,28 @@
 import React, {useState} from 'react';
-import {Container, Form, Header, Input, Message} from 'semantic-ui-react';
+import {Container, Form, Input, Message} from 'semantic-ui-react';
 import axios from "axios";
 
-interface Message {
+interface IMessage {
     id: number;
+    info: boolean;
+    positive: boolean;
     sender: string;
     text: string;
 }
 
 interface ChatProps {
-    messages: Message[];
+    messages: IMessage[];
 }
 
 const ChatRoom: React.FC<ChatProps> = () => {
-    const [messages, setMessages] = useState<Message[]>([]);
+    const [messages, setMessages] = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState<string>('');
 
     const handleSendMessage = () => {
         const newMessage = {
             id: Date.now(),
+            info: true,
+            positive: false,
             sender: 'Me',
             text: inputText,
         };
@@ -31,10 +35,14 @@ const ChatRoom: React.FC<ChatProps> = () => {
 
         axios.post('http://47.254.84.246:8080/send', data)
             .then(response => {
+                let chatRespMsg = response.data.msg;
+                chatRespMsg = chatRespMsg.replace('\n\n', '');
                 const chatMsg = {
                     id: Date.now(),
+                    info: false,
+                    positive: true,
                     sender: 'ChatGPT',
-                    text: response.data.msg,
+                    text: chatRespMsg,
                 };
                 setMessages([...messages, newMessage, chatMsg]);
             })
@@ -44,9 +52,9 @@ const ChatRoom: React.FC<ChatProps> = () => {
     return (
         <Container>
             {messages.map((message) => (
-                <Message key={message.id}>
+                <Message info={message.info} positive={message.positive} key={message.id}>
                     <Message.Header>{message.sender}</Message.Header>
-                    <p>{message.text}</p>
+                    <div style={{whiteSpace: "pre-line"}}>{message.text}</div>
                 </Message>
             ))}
             <Form onSubmit={handleSendMessage}>
@@ -54,8 +62,8 @@ const ChatRoom: React.FC<ChatProps> = () => {
                     type="text"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
-                    placeholder="Type a message..."
-                    action={{content: 'Send', type: 'submit'}}
+                    placeholder="在此输入"
+                    action={{content: '发送', type: 'submit'}}
                 />
             </Form>
         </Container>
